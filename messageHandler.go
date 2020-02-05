@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -28,7 +30,33 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 	//	Example reaction
 	messageText := message.Text
 	if message.Info.Timestamp > startTime {
-		if strings.HasPrefix(messageText, "/il") || strings.HasPrefix(messageText, "!il") {
+		if messageText == "/rf" {
+			str := []string{}
+			f, err := os.Open("facts.txt")
+			if err != nil {
+				fmt.Println("Err:", err.Error())
+				return
+			}
+			fileScanner := bufio.NewScanner(f)
+			lineCount := 0
+			for fileScanner.Scan() {
+				str = append(str, string(fileScanner.Bytes()))
+				lineCount++
+			}
+			f.Close()
+
+			line := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(lineCount - 1)
+
+			txt := str[line]
+
+			time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
+			conn.Send(whatsapp.TextMessage{
+				Info: whatsapp.MessageInfo{
+					RemoteJid: message.Info.RemoteJid,
+				},
+				Text: txt,
+			})
+		} else if strings.HasPrefix(messageText, "/il") || strings.HasPrefix(messageText, "!il") {
 			initEmpty(message.Info.RemoteJid)
 			str := roomLangsFrom[message.Info.RemoteJid].String() + " -> " + roomLangsTo[message.Info.RemoteJid].String()
 			time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
@@ -39,35 +67,16 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 				Text: str,
 			})
 		} else if (strings.HasPrefix(messageText, "/sl") || strings.HasPrefix(messageText, "!sl")) && len(strings.Split(messageText, " ")) == 2 && message.Info.FromMe {
-			languag := strings.Split(messageText, " ")[1]
+			languag := strings.ToLower(strings.Split(messageText, " ")[1])
+
 			if strings.HasPrefix(messageText, "/slt") || strings.HasPrefix(messageText, "!slt") {
-				retMsg := ""
-				switch languag {
-				case "en", "english", "englisch":
-					{
-						roomLangsTo[message.Info.RemoteJid] = language.English
-						retMsg = "Translate to english"
-					}
-				case "de", "deutsch", "german":
-					{
-						roomLangsTo[message.Info.RemoteJid] = language.German
-						retMsg = "Translate to german"
-					}
-				case "es", "spanish", "spanisch":
-					{
-						roomLangsTo[message.Info.RemoteJid] = language.Spanish
-						retMsg = "Translate to spanish"
-					}
-				case "pl", "polish", "polnisch":
-					{
-						roomLangsTo[message.Info.RemoteJid] = language.Polish
-						retMsg = "Translate to polish"
-					}
-				default:
-					{
-						retMsg = "Can't find language '" + languag + "'!"
-					}
+				lang, retMsg := strToTag(languag, "to")
+				if len(retMsg) > 0 {
+					roomLangsTo[message.Info.RemoteJid] = lang
+				} else {
+					retMsg = "Can't find language '" + languag + "'!"
 				}
+
 				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
 				conn.Send(whatsapp.TextMessage{
 					Info: whatsapp.MessageInfo{
@@ -76,33 +85,14 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 					Text: retMsg,
 				})
 			} else if strings.HasPrefix(messageText, "/slf") || strings.HasPrefix(messageText, "!slf") {
-				retMsg := ""
-				switch languag {
-				case "en", "english", "englisch":
-					{
-						roomLangsFrom[message.Info.RemoteJid] = language.English
-						retMsg = "Translate from english"
-					}
-				case "de", "deutsch", "german":
-					{
-						roomLangsFrom[message.Info.RemoteJid] = language.German
-						retMsg = "Translate from german"
-					}
-				case "pl", "polish", "polnisch":
-					{
-						roomLangsFrom[message.Info.RemoteJid] = language.Polish
-						retMsg = "Translate from polish"
-					}
-				case "es", "spanish", "spanisch":
-					{
-						roomLangsFrom[message.Info.RemoteJid] = language.Spanish
-						retMsg = "Translate from spanish"
-					}
-				default:
-					{
-						retMsg = "Can't find language '" + languag + "'!"
-					}
+
+				lang, retMsg := strToTag(languag, "from")
+				if len(retMsg) > 0 {
+					roomLangsFrom[message.Info.RemoteJid] = lang
+				} else {
+					retMsg = "Can't find language '" + languag + "'!"
 				}
+
 				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
 				conn.Send(whatsapp.TextMessage{
 					Info: whatsapp.MessageInfo{
