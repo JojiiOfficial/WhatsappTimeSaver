@@ -31,6 +31,7 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 		if strings.HasPrefix(messageText, "/il") || strings.HasPrefix(messageText, "!il") {
 			initEmpty(message.Info.RemoteJid)
 			str := roomLangsFrom[message.Info.RemoteJid].String() + " -> " + roomLangsTo[message.Info.RemoteJid].String()
+			time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
 			conn.Send(whatsapp.TextMessage{
 				Info: whatsapp.MessageInfo{
 					RemoteJid: message.Info.RemoteJid,
@@ -52,6 +53,11 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 						roomLangsTo[message.Info.RemoteJid] = language.German
 						retMsg = "Translate to german"
 					}
+				case "es", "spanish", "spanisch":
+					{
+						roomLangsTo[message.Info.RemoteJid] = language.Spanish
+						retMsg = "Translate to spanish"
+					}
 				case "pl", "polish", "polnisch":
 					{
 						roomLangsTo[message.Info.RemoteJid] = language.Polish
@@ -62,6 +68,7 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 						retMsg = "Can't find language '" + languag + "'!"
 					}
 				}
+				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
 				conn.Send(whatsapp.TextMessage{
 					Info: whatsapp.MessageInfo{
 						RemoteJid: message.Info.RemoteJid,
@@ -86,11 +93,17 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 						roomLangsFrom[message.Info.RemoteJid] = language.Polish
 						retMsg = "Translate from polish"
 					}
+				case "es", "spanish", "spanisch":
+					{
+						roomLangsFrom[message.Info.RemoteJid] = language.Spanish
+						retMsg = "Translate from spanish"
+					}
 				default:
 					{
 						retMsg = "Can't find language '" + languag + "'!"
 					}
 				}
+				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(2))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1600))*time.Millisecond)
 				conn.Send(whatsapp.TextMessage{
 					Info: whatsapp.MessageInfo{
 						RemoteJid: message.Info.RemoteJid,
@@ -114,7 +127,7 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 					},
 					Text: tl,
 				}
-				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(5)) * time.Second)
+				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1))*time.Second + (time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1850))*time.Millisecond)
 				_, err := conn.Send(msg)
 				if err != nil {
 					fmt.Println(err.Error())
