@@ -20,6 +20,8 @@ func main() {
 	sess, conn = HandleLogin()
 	_ = sess
 
+	langInit()
+
 	// Add a complete MSG Handler
 	conn.AddHandler(cmd{})
 

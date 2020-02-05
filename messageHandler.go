@@ -13,22 +13,101 @@ import (
 
 type messageHandler struct{}
 
-func (messageHandler) HandleError(err error) {
-	//fmt.Fprintf(os.Stderr, "%v", err)
+var defaultLangFrom = language.German
+var defaultLangTo = language.English
+
+var roomLangsTo map[string]language.Tag
+var roomLangsFrom map[string]language.Tag
+
+func langInit() {
+	roomLangsFrom = make(map[string]language.Tag)
+	roomLangsTo = make(map[string]language.Tag)
 }
 
 func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 	//	Example reaction
-	if message.Info.Timestamp > startTime && (strings.HasPrefix(message.Text, "/t") || strings.HasPrefix(message.Text, "!t")) {
-		if len(message.Text) > 1 {
+	messageText := message.Text
+	if message.Info.Timestamp > startTime {
+		if strings.HasPrefix(messageText, "/il") || strings.HasPrefix(messageText, "!il") {
+			initEmpty(message.Info.RemoteJid)
+			str := roomLangsFrom[message.Info.RemoteJid].String() + " -> " + roomLangsTo[message.Info.RemoteJid].String()
+			conn.Send(whatsapp.TextMessage{
+				Info: whatsapp.MessageInfo{
+					RemoteJid: message.Info.RemoteJid,
+				},
+				Text: str,
+			})
+		} else if (strings.HasPrefix(messageText, "/sl") || strings.HasPrefix(messageText, "!sl")) && len(strings.Split(messageText, " ")) == 2 && message.Info.FromMe {
+			languag := strings.Split(messageText, " ")[1]
+			if strings.HasPrefix(messageText, "/slt") || strings.HasPrefix(messageText, "!slt") {
+				retMsg := ""
+				switch languag {
+				case "en", "english", "englisch":
+					{
+						roomLangsTo[message.Info.RemoteJid] = language.English
+						retMsg = "Translate to english"
+					}
+				case "de", "deutsch", "german":
+					{
+						roomLangsTo[message.Info.RemoteJid] = language.German
+						retMsg = "Translate to german"
+					}
+				case "pl", "polish", "polnisch":
+					{
+						roomLangsTo[message.Info.RemoteJid] = language.Polish
+						retMsg = "Translate to polish"
+					}
+				default:
+					{
+						retMsg = "Can't find language '" + languag + "'!"
+					}
+				}
+				conn.Send(whatsapp.TextMessage{
+					Info: whatsapp.MessageInfo{
+						RemoteJid: message.Info.RemoteJid,
+					},
+					Text: retMsg,
+				})
+			} else if strings.HasPrefix(messageText, "/slf") || strings.HasPrefix(messageText, "!slf") {
+				retMsg := ""
+				switch languag {
+				case "en", "english", "englisch":
+					{
+						roomLangsFrom[message.Info.RemoteJid] = language.English
+						retMsg = "Translate from english"
+					}
+				case "de", "deutsch", "german":
+					{
+						roomLangsFrom[message.Info.RemoteJid] = language.German
+						retMsg = "Translate from german"
+					}
+				case "pl", "polish", "polnisch":
+					{
+						roomLangsFrom[message.Info.RemoteJid] = language.Polish
+						retMsg = "Translate from polish"
+					}
+				default:
+					{
+						retMsg = "Can't find language '" + languag + "'!"
+					}
+				}
+				conn.Send(whatsapp.TextMessage{
+					Info: whatsapp.MessageInfo{
+						RemoteJid: message.Info.RemoteJid,
+					},
+					Text: retMsg,
+				})
+			}
+		} else if strings.HasPrefix(messageText, "/t") || strings.HasPrefix(messageText, "!t") && len(messageText) > 1 {
+			initEmpty(message.Info.RemoteJid)
 			var txt string
 			if message.ContextInfo.QuotedMessage != nil {
 				txt = message.ContextInfo.QuotedMessage.GetConversation()
-			} else if len(message.Text) > 2 {
-				txt = message.Text[2:]
+			} else if len(messageText) > 2 {
+				txt = messageText[2:]
 			}
 			if len(txt) > 0 {
-				tl, _ := gtranslate.Translate(txt, language.German, language.English)
+				tl, _ := gtranslate.Translate(txt, roomLangsFrom[message.Info.RemoteJid], roomLangsTo[message.Info.RemoteJid])
 				msg := whatsapp.TextMessage{
 					Info: whatsapp.MessageInfo{
 						RemoteJid: message.Info.RemoteJid,
@@ -46,6 +125,17 @@ func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 
 	//fmt.Println(message)
 	fmt.Printf("%s:\t%s\n", jidToName(message.Info.RemoteJid), message.Text)
+}
+
+func initEmpty(roomID string) {
+	_, ok := roomLangsTo[roomID]
+	if !ok {
+		roomLangsTo[roomID] = defaultLangTo
+	}
+	_, ok = roomLangsFrom[roomID]
+	if !ok {
+		roomLangsFrom[roomID] = defaultLangFrom
+	}
 }
 
 func (messageHandler) HandleImageMessage(message whatsapp.ImageMessage) {
@@ -70,4 +160,8 @@ func (messageHandler) HandleJSONMessage(message string) {
 
 func (messageHandler) HandleContactMessage(message whatsapp.ContactMessage) {
 	//fmt.Println(message)
+}
+
+func (messageHandler) HandleError(err error) {
+	//fmt.Fprintf(os.Stderr, "%v", err)
 }

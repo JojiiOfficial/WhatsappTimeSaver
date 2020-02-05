@@ -67,6 +67,7 @@ func HandleLogin() (whatsapp.Session, *whatsapp.Conn) {
 
 	// Session loaded successfully. Use it to login
 	wac, err := whatsapp.NewConn(whatsappTimeout)
+
 	sess, err := wac.RestoreWithSession(savedSession)
 
 	if err != nil {
