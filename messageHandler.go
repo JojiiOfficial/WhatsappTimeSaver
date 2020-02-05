@@ -19,20 +19,27 @@ func (messageHandler) HandleError(err error) {
 
 func (messageHandler) HandleTextMessage(message whatsapp.TextMessage) {
 	//	Example reaction
-	if message.Info.Timestamp > startTime && strings.HasPrefix(message.Text, "!t") {
-		if len(message.Text) > 2 {
-			tl, _ := gtranslate.Translate(message.Text[2:], language.German, language.English)
-			msg := whatsapp.TextMessage{
-				Info: whatsapp.MessageInfo{
-					RemoteJid: message.Info.RemoteJid,
-				},
-				Text: tl,
+	if message.Info.Timestamp > startTime && (strings.HasPrefix(message.Text, "/t") || strings.HasPrefix(message.Text, "!t")) {
+		if len(message.Text) > 1 {
+			var txt string
+			if message.ContextInfo.QuotedMessage != nil {
+				txt = message.ContextInfo.QuotedMessage.GetConversation()
+			} else if len(message.Text) > 2 {
+				txt = message.Text[2:]
 			}
-			// Und schick sie ab
-			time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(5)) * time.Second)
-			_, err := conn.Send(msg)
-			if err != nil {
-				fmt.Println(err.Error())
+			if len(txt) > 0 {
+				tl, _ := gtranslate.Translate(txt, language.German, language.English)
+				msg := whatsapp.TextMessage{
+					Info: whatsapp.MessageInfo{
+						RemoteJid: message.Info.RemoteJid,
+					},
+					Text: tl,
+				}
+				time.Sleep((time.Duration)(rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(5)) * time.Second)
+				_, err := conn.Send(msg)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
 			}
 		}
 	}
